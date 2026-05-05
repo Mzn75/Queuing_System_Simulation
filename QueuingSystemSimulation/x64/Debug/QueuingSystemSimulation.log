@@ -1,0 +1,7 @@
+﻿  HomePage.cpp
+  Program.cpp
+  Queue.cpp
+  .NETFramework,Version=v4.8.AssemblyAttributes.cpp
+  Generating Code...
+  HomePage.obj : MSIL module encountered; incremental linking is disabled for MSIL; performing full link
+  QueuingSystemSimulation.vcxproj -> E:\University\Programming Projects\QueuingSystemSimulation\x64\Debug\QueuingSystemSimulation.exe
