@@ -65,9 +65,8 @@ namespace QueuingSystemSimulation {
 	private:
 
 
-
-#pragma region Windows Form Designer generated code
-
+	// Windows Form Designer auto generated code
+	#pragma region Windows Form Designer generated code
 		void InitializeComponent(void)
 		{
 			this->components = (gcnew System::ComponentModel::Container());
@@ -324,25 +323,24 @@ namespace QueuingSystemSimulation {
 			this->PerformLayout();
 
 		}
-#pragma endregion
+	#pragma endregion
 	
 	//HomePage Load Event - Initialize Variables
 	private: System::Void HomePage_Load(System::Object^ sender, System::EventArgs^ e) {
+
+		// Hide output and stats boxes until simulation starts
 		outputTxtBox->Visible = false;
 		queueLengthTxtBox->Visible = false;
 		timeTxtBox->Visible = false;
 		autoArrivalBox->Checked = true;
 
+		// Initialize Progress Bar
 		progressBar->Minimum = 0;	
 		progressBar->Value = 0;
 
+		// Initialize Simulation Variables
 		arrivalTimes = new int[100];
 		serviceTimes = new int[100];
-
-		numServers = 1;
-		serverBusy = new int[3];
-		for (int i = 0; i < 3; i++) serverBusy[i] = 0;
-
 		nextId = 1;
 		totalArrived = 0;
 		totalServed = 0;
@@ -351,37 +349,55 @@ namespace QueuingSystemSimulation {
 		currentTime = 0;
 		simulationTime = 30;
 
+		// Default to 1 server
+		numServers = 1;
+		
+		// Initialize server busy times to 0
+		serverBusy = new int[3];
+		for (int i = 0; i < 3; i++) serverBusy[i] = 0;
+
+		// Add options to Number of Servers ComboBox
 		numOfServersBox->Items->Add("1 Server");
 		numOfServersBox->Items->Add("2 Servers");
 		numOfServersBox->Items->Add("3 Servers");
+		// Set default selection to 1 Server
 		numOfServersBox->SelectedIndex = 0;
 
+		// Add options to Simulation Time ComboBox
 		simTimeBox->Items->Add("30 Seconds");
 		simTimeBox->Items->Add("60 Seconds");
 		simTimeBox->Items->Add("90 Seconds");
 		simTimeBox->Items->Add("120 Seconds");
+		// Set default selection to 30 Seconds
 		simTimeBox->SelectedIndex = 0;
 	}
 
 	// Enqueue Button Click Event
 	private: System::Void enqueueBtn_Click(System::Object^ sender, System::EventArgs^ e) {
+		// If Auto Arrival is enabled, manual enqueueing won't work to avoid conflicts in the simulation logic
 		if (autoArrivalBox->Checked) {
 			outputTxtBox->Visible = true;
 			outputTxtBox->Text = "Disable Auto Arrival First !";
 			return;
 		}
 
+		// Limit queue size to 100 for simplicity
 		if (q.getSize() >= 100) {
 			outputTxtBox->Visible = true;
 			outputTxtBox->Text = "Queue is Full ! Cannot Enqueue More Customers";
 			return;
 		}
-
+		
+		// Enqueue a new customer with random service time between 1 and 4 seconds
 		int id = nextId++;
 		arrivalTimes[id] = currentTime;
 		serviceTimes[id] = rand() % 4 + 1;
 		q.enqueue(id);
+
+		// Update stats
 		totalArrived++;
+
+		// Update UI
 		outputTxtBox->Visible = true;
 		queueLengthTxtBox->Visible = true;
 		outputTxtBox->Text = "Enqueued, Customer ID: " + id.ToString();
@@ -392,6 +408,8 @@ namespace QueuingSystemSimulation {
 	private: System::Void dequeueBtn_Click(System::Object^ sender, System::EventArgs^ e) {
 		outputTxtBox->Visible = true;
 		queueLengthTxtBox->Visible = true;
+		
+		// Dequeue a customer if the queue is not empty
 		if (!q.isEmpty()) {
 			int id = q.peek();
 			q.dequeue();
@@ -400,27 +418,43 @@ namespace QueuingSystemSimulation {
 		else {
 			outputTxtBox->Text = "Queue is Empty";
 		}
+
+		// Update UI
 		queueLengthTxtBox->Text = "Queue length: " + q.getSize().ToString();
 	}	
 
 	// Start Button Click Event - Start Simulation
 	private: System::Void startBtn_Click(System::Object^ sender, System::EventArgs^ e) {
+		// If Auto Arrival is disabled, the simulation cannot be started without any customers in the queue
 		if (q.isEmpty() && !autoArrivalBox->Checked) {
 			outputTxtBox->Visible = true;
 			outputTxtBox->Text = "No customers in the Queue ! Enqueue First !";
 			return;
 		}
 
+		// Reset all simulation variables
 		nextId = 1;
 		currentTime = 0;
 		totalArrived = 0;
 		totalServed = 0;
 		totalWaitTime = 0;
+
+		// Set simulation time based on user selection from ComboBox
 		simulationTime = (simTimeBox->SelectedIndex + 1) * 30;
+
+		// Set Progress Bar maximum to simulation time
 		progressBar->Maximum = simulationTime;
 
+		// Set number of servers based on user selection from ComboBox
 		numServers = numOfServersBox->SelectedIndex + 1;
+
+		// Reset server busy times
 		for (int i = 0; i < 3; i++) serverBusy[i] = 0;
+
+		// Start the simulation timer
+		simTimer->Start();
+
+		// Update UI
 		outputTxtBox->Visible = true;
 		queueLengthTxtBox->Visible = true;
 		timeTxtBox->Visible = true;
@@ -428,32 +462,37 @@ namespace QueuingSystemSimulation {
 		enqueueBtn->Enabled = false;
 		dequeueBtn->Enabled = false;
 		resetBtn->Enabled = false;
-		simTimer->Start();
 	}
 
 	// Simulation Timer Tick Event - Main Simulation Logic
 	private: System::Void simTimer_Tick(System::Object^ sender, System::EventArgs^ e) {
+		// Check if simulation time has been reached
 		if (currentTime >= simulationTime) {
+			// Stop the simulation and enable buttons
 			simTimer->Stop();
 			startBtn->Enabled = true;
 			enqueueBtn->Enabled = true;
 			dequeueBtn->Enabled = true;
 			resetBtn->Enabled = true;
 
+			// Calculate average wait time
 			double avgWait = 0;
 			if (totalServed > 0)
 				avgWait = (double)totalWaitTime / totalServed;
 
+			// Update UI with final stats
 			outputTxtBox->Text = "Done ! Served: " + totalServed.ToString() + " | Arrived: " + totalArrived.ToString();
 			queueLengthTxtBox->Text = "Avg wait: " + ((int)avgWait).ToString() + " Seconds";
 			timeTxtBox->Text = "Simulation Completed !";
 			return;
 		}
-
+		
+		// Decrease busy time for each server
 		for (int i = 0; i < numServers; i++) {
 			if (serverBusy[i] > 0) serverBusy[i]--;
 		}
 
+		// If Auto Arrival is enabled, randomly generate new customers based on arrival rate
 		if (autoArrivalBox->Checked) {
 			if (rand() % arrivalRate == 0) {
 				int id = nextId++;
@@ -464,6 +503,7 @@ namespace QueuingSystemSimulation {
 			}
 		}
 
+		// Assign customers to free servers
 		String^ servedText = "";
 		for (int i = 0; i < numServers; i++) {
 			if (serverBusy[i] == 0 && !q.isEmpty()) {
@@ -477,25 +517,31 @@ namespace QueuingSystemSimulation {
 			}
 		}
 
+		// Update UI with current stats
 		if (servedText != "")
 			outputTxtBox->Text = servedText;
 		else
 			outputTxtBox->Text = "No Customers Being Served";
 
+		// Update time and queue stats
 		timeTxtBox->Text = "Time: " + currentTime.ToString() + " Seconds";
 		queueLengthTxtBox->Text = "Queue: " + q.getSize().ToString() + " | Served: " + totalServed.ToString()+ " | Arrived: " + totalArrived.ToString();
 
+		// If the queue is empty and auto arrival is disabled, stop the simulation
 		if (q.isEmpty() && !autoArrivalBox->Checked) {
+			// Stop the simulation and enable buttons
 			simTimer->Stop();
 			startBtn->Enabled = true;
 			enqueueBtn->Enabled = true;
 			dequeueBtn->Enabled = true;
 			resetBtn->Enabled = true;
 
+			// Calculate average wait time
 			double avgWait = 0;
 			if (totalServed > 0)
 				avgWait = (double)totalWaitTime / totalServed;
 
+			// Update UI with final stats
 			outputTxtBox->Text = "Done ! Served: " + totalServed.ToString() + " | Arrived: " + totalArrived.ToString();
 			queueLengthTxtBox->Text = "Avg wait: " + ((int)avgWait).ToString() + " Seconds";
 			timeTxtBox->Text = "Simulation Completed !";
@@ -503,6 +549,7 @@ namespace QueuingSystemSimulation {
 			return;
 		}
 
+		// Increment time and update progress bar
 		currentTime++;
 		progressBar->Value = currentTime;
 	}
@@ -531,17 +578,13 @@ namespace QueuingSystemSimulation {
 		queueLengthTxtBox->Text = "";
 		timeTxtBox->Text = "";
 		progressBar->Value = 0;
-
 		outputTxtBox->Visible = false;
 		queueLengthTxtBox->Visible = false;
 		timeTxtBox->Visible = false;
-
 		startBtn->Enabled = true;
 		enqueueBtn->Enabled = true;
 		dequeueBtn->Enabled = true;
-
 		numOfServersBox->SelectedIndex = 0;
-
 		simTimeBox->SelectedIndex = 0;
 		progressBar->Maximum = 30;
 	}
