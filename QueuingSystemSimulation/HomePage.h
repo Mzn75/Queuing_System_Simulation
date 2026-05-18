@@ -413,12 +413,14 @@ namespace QueuingSystemSimulation {
 		if (!q.isEmpty()) {
 			int id = q.peek();
 			q.dequeue();
+
+			totalServed++;
+
 			outputTxtBox->Text = "Dequeued, Customer ID: " + id.ToString();
 		}
 		else {
-			outputTxtBox->Text = "Queue is Empty";
+			outputTxtBox->Text = "Queue is Empty | " + "Served: " + totalServed.ToString();	
 		}
-
 		// Update UI
 		queueLengthTxtBox->Text = "Queue length: " + q.getSize().ToString();
 	}	
